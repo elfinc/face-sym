@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge, chrome=1">
+  <title>Face Sym</title>
+</head>
+
+<body></body>
+<script>
+  (() => {
+    var v0 = document.createElement('video');
+    var v1 = document.createElement('video');
+    document.body.innerHTML = '';
+    v0.style.position = v1.style.position = 'absolute';
+    v0.style.width = v1.style.width = '100%';
+    v1.style.opacity = '.5';
+    v1.style.transform = 'scaleX(-1)';
+    v1.style.transition = 'opacity .5s ease';
+    document.body.style.margin = 0;
+    document.body.style.background = '#222';
+    document.body.appendChild(v0);
+    document.body.appendChild(v1);
+
+    v1.onpointerdown = (p) => {
+      var w = window.innerWidth;
+      var x = Math.max(p.clientX, 0);
+      v1.style.opacity = Math.min(x / w, 1);
+    }
+
+    v1.ontouchstart = v1.ontouchmove = (e) => {
+      e.preventDefault();
+      var p = e.touches[0];
+      v1.onpointerdown(p);
+    };
+
+    var tip = document.createElement('div');
+    tip.style.position = 'absolute';
+    tip.style.width = '100%';
+    tip.style.height = '6vw';
+    tip.style.padding = '1vw';
+    tip.style.boxSizing = 'border-box';
+    tip.style.pointerEvents = 'none';
+    var tipL = document.createElement('div');
+    var tipR = document.createElement('div');
+    tipL.style.cssFloat = 'left';
+    tipR.style.cssFloat = 'right';
+    tipL.innerText = '< 原貌 ·····';
+    tipR.innerText = '····· 镜像 >';
+    tipL.style.fontWeight = tipR.style.fontWeight = '100';
+    tipL.style.fontSize = tipR.style.fontSize = '2vw';
+    tipL.style.color = tipR.style.color = 'rgba(255,255,255,0.3)';
+    tip.appendChild(tipL);
+    tip.appendChild(tipR);
+    document.body.appendChild(tip);
+
+    var btn = document.createElement('div');
+    btn.textContent = '准备中';
+    btn.style.pointerEvents = 'none';
+    btn.style.position = 'absolute';
+    btn.style.bottom = 0;
+    btn.style.width = '100%';
+    btn.style.minHeight = '12vw';
+    btn.style.lineHeight = '12vw';
+    btn.style.fontSize = '2vw';
+    btn.style.fontWeight = '100';
+    btn.style.textAlign = 'center';
+    btn.style.color = '#ddd';
+    btn.style.background = 'linear-gradient(to bottom,transparent 0%,rgba(33,33,33,0.7) 80%,#222 100%)';
+    document.body.appendChild(btn);
+
+    function btnText(txt, disabled) {
+      btn.textContent = txt;
+      btn.style.pointerEvents = disabled ? 'none' : 'all';
+      btn.style.color = disabled ? '#666' : '#ddd';
+    }
+
+    function ok() {
+      btnText('开启摄像头');
+      btn.onclick = (e) => {
+        btnText('获取中', 1);
+        openCamera(cameraID[0]);
+        cameraID.push(cameraID.shift());
+      }
+    }
+
+    if (!(navigator && navigator.mediaDevices && navigator.mediaDevices.enumerateDevices && navigator.mediaDevices.getUserMedia)) {
+      btnText('浏览器不兼容', 1);
+      return;
+    };
+
+    var cameraID = [];
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      for (var i in devices) {
+        var device = devices[i];
+        if (device.kind == 'videoinput') {
+          cameraID.push(device.deviceId);
+        }
+      }
+      if (cameraID.length) ok();
+      else btnText('未找到摄像头', 1);
+    }).catch((e) => {
+      btnText('设备检测失败', 1);
+    });
+
+    var track;
+    function openCamera(id) {
+      navigator.mediaDevices.getUserMedia({ video: { deviceId: id, width: window.innerWidth } }).then((obj) => {
+        track && track.stop();
+        track = obj.getTracks()[0];
+        v0.srcObject = v1.srcObject = obj;
+        v0.play();
+        v1.play();
+        btnText('切换摄像头');
+      }).catch((e) => {
+        btnText('摄像头获取失败');
+      });
+    }
+
+    window.onresize = v1.onplaying = (e) => {
+      btn.style.height = Math.max(window.innerHeight - v1.clientHeight, 0) + 'px';
+    }
+  })()
+</script>
+
+</html>
